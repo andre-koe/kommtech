@@ -239,7 +239,6 @@ def huffman_a_3_tree_reconstruction(node, encoding_map: dict, prefix=''):
 def a_4_init():
     rfc_2324 = read_file("RFC-2324-HTCPCP.txt")
 
-    count = 0
     to_be_encoded = []
 
     for count in range(10):
@@ -247,8 +246,9 @@ def a_4_init():
         to_be_encoded.append(MessageSource("".join(random.choices(rfc_2324, k=1000))))
 
     alg = ["SHANNON-FANO", "HUFFMAN", "ARITHMETIC ENCODING"]
-    res = [len(val) for val in a_4_create_encodings(to_be_encoded)]
+    res = [sum(val) / 10 for val in a_4_create_encodings(to_be_encoded)]
 
+    print(res)
     draw_a_4(alg, res)
 
 
@@ -259,13 +259,13 @@ def a_4_create_encodings(tb_encoded: list[MessageSource]) -> tuple:
 
     for un_encoded in tb_encoded:
         """ Encode with shannon """
-        encoded_shannon.append(EncodeDecode(un_encoded, "shannon-fano").encode(un_encoded.word)[0])
+        encoded_shannon.append(len(EncodeDecode(un_encoded, "shannon-fano").encode(un_encoded.word)[0]))
         """ Encode with huffman """
-        encoded_huffman.append(EncodeDecode(un_encoded, "huffman").encode(un_encoded.word)[0])
+        encoded_huffman.append(len(EncodeDecode(un_encoded, "huffman").encode(un_encoded.word)[0]))
         """ Encode with arithmetic encoding """
         model = StaticModel(un_encoded.character_occurrence_prob)
         coder = AECompressor(model)
-        encoded_arithmetic.append("".join([str(bit) for bit in coder.compress(un_encoded.word)]))
+        encoded_arithmetic.append(len("".join([str(bit) for bit in coder.compress(un_encoded.word)])))
     return encoded_shannon, encoded_huffman, encoded_arithmetic
 
 
@@ -311,6 +311,32 @@ def draw_bar_a_1_3(wordlist: list, word: str, reverse: False):
 
     plt.show()
 
+def a_2_2_helper(string: str) -> tuple:
+    msg_rfc = MessageSource(string)
+    return msg_rfc.character_occurrence, msg_rfc.character_information
+
+
+def draw_a_2_2_prob():
+    rfc_2324 = read_file("RFC-2324-HTCPCP.txt")
+    result = [(k, v) for k, v in sorted(a_2_2_helper(rfc_2324)[0].items(), key=lambda x: x[1], reverse=True)]
+    x = [entry[0] for entry in result]
+    y = [entry[1] for entry in result]
+    plt.bar(x, y)
+    plt.title('Probability per Char')
+    plt.xlabel("Char")
+    plt.ylabel("Count")
+    plt.show()
+
+def draw_a_2_2_abs():
+    rfc_2324 = read_file("RFC-2324-HTCPCP.txt")
+    result = [(k, v) for k, v in sorted(a_2_2_helper(rfc_2324)[1].items(), key=lambda x: x[1], reverse=True)]
+    x = [entry[0] for entry in result]
+    y = [entry[1] for entry in result]
+    plt.bar(x, y)
+    plt.title('Informationvalue per Char')
+    plt.xlabel("Char")
+    plt.ylabel("Informationvalue")
+    plt.show()
 
 def draw_a_4(alg: list, res: list):
     plt.bar(alg, res)
@@ -336,6 +362,8 @@ if __name__ == '__main__':
     draw_bar_a_1_2(word_list, "Xylofon")
     draw_bar_a_1_3(word_list, "Xylofon", reverse=False)
     draw_bar_a_1_3(word_list, "Xylofon", reverse=True)
+    draw_a_2_2_abs()
+    draw_a_2_2_prob()
 
     ### A.2
     msg = MessageSource("Hochschule")
