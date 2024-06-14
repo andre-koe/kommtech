@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+#from komm import ConvolutionalCode, TerminatedConvolutionalCode, BlockDecoder, BlockEncoder
 
 from a5.lib.komm._error_control_block import TerminatedConvolutionalCode, BlockDecoder, BlockEncoder
 from a5.lib.komm._error_control_convolutional import ConvolutionalCode
@@ -151,7 +152,7 @@ def soft_decision_coding(received_frame):
     return np.array(coded_frame)
 
 
-def simulate_fer(code: ConvolutionalCode, frame_length: int, frame_count: int, error_prob: float, pattern):
+def simulation(code: ConvolutionalCode, frame_length: int, frame_count: int, error_prob: float, pattern):
     t_code = TerminatedConvolutionalCode(convolutional_code=code, num_blocks=frame_length, mode='zero-termination')
     frames = [generate_binary_array(frame_length) for _ in range(frame_count)]
     frames_encoded = [t_code.enc_mapping(f) for f in frames]
@@ -170,9 +171,9 @@ def calculate_throughput(code_rate, fer):
     return code_rate * (1 - fer)
 
 
-def plot(results: dict, code: ConvolutionalCode):
+def plot(results: dict):
     plt.figure(figsize=(12, 6))
-    plt.suptitle(f'({code.feedforward_polynomials})')
+    #plt.suptitle(f'({code.feedforward_polynomials})')
 
     plt.subplot(1, 2, 1)
     for rate, data in results.items():
@@ -252,9 +253,9 @@ if __name__ == "__main__":
     error_probs = np.linspace(0, 0.2, 21)
     code_rates = {
         '1/3': [1, 1, 1],  # Kein Punktierungsmuster
-        '1/2': [1, 1, 0, 1, 1, 0],
-        '2/3': [1, 1, 1, 0, 1, 1, 1, 0],
-        '3/4': [1, 1, 1, 1, 0, 1, 1, 1, 1, 0]
+        '1/2': [1, 1],
+        '2/3': [1, 1, 1, 0],
+        '3/4': [1, 0, 1, 1, 0, 1]
     }
 
     convolutional_codes = [
@@ -262,13 +263,20 @@ if __name__ == "__main__":
         ConvolutionalCode(feedforward_polynomials=[[0o155, 0o171, 0o157]])
     ]
 
-    for convolutional_code in convolutional_codes:
-        results = {rate: [] for rate in code_rates}
 
-        for rate, pattern in code_rates.items():
-            for error_prob in error_probs:
-                fer = simulate_fer(convolutional_code, frame_length, frame_count, error_prob, pattern)
-                throughput = calculate_throughput(eval(rate), fer)
-                results[rate].append((error_prob, fer, throughput))
 
-        plot(results, convolutional_code)
+    #for convolutional_code in convolutional_codes:
+    results = {rate: [] for rate in code_rates}
+
+    for rate, pattern in code_rates.items():
+        if rate == "1/3":
+            convolutional_code = convolutional_codes[1]
+        else:
+            convolutional_code = convolutional_codes[0]
+        for error_prob in error_probs:
+            fer = simulation(convolutional_code, frame_length, frame_count, error_prob, pattern)
+            code_rate_as_float = eval(rate)
+            throughput = calculate_throughput(code_rate_as_float, fer)
+            results[rate].append((error_prob, fer, throughput))
+
+    plot(results)
